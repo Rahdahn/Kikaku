@@ -1,36 +1,70 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 public class DragHandler : MonoBehaviour
 {
+    [Header("ドラッグ対象となるオブジェクト")]
+    public List<GameObject> draggableObjects;
+
+    [Header("ドラッグターゲット")]
+    public Transform dragTargetArea;
+
+    [Tooltip("ドラッグ成功時に許容される距離")]
+    public float snapDistance = 1f;
+
+    [Header("イベント")]
     public UnityEvent onDragStart;
     public UnityEvent onDragEnd;
+    public UnityEvent onDragSuccess;
+    public UnityEvent onDragFail;
 
-    private bool dragging = false;
+    private GameObject currentDragging;
+    private bool dragging;
 
     void Update()
     {
-        Vector2 worldPos = Camera.main.ScreenToWorldPoint(PlayerInputReader.Instance.PointerPosition);
+        Vector2 pointerWorldPos = Camera.main.ScreenToWorldPoint(PlayerInputReader.Instance.PointerPosition);
 
-        if (PlayerInputReader.Instance.ClickStarted)
+        if (PlayerInputReader.Instance.ClickStarted && !dragging)
         {
-            Collider2D hit = Physics2D.OverlapPoint(worldPos);
-            if (hit?.transform == this.transform)
+            foreach (GameObject obj in draggableObjects)
             {
-                dragging = true;
-                onDragStart?.Invoke();
+                if (obj == null) continue;
+
+                Collider2D col = obj.GetComponent<Collider2D>();
+                if (col != null && col.OverlapPoint(pointerWorldPos))
+                {
+                    currentDragging = obj;
+                    dragging = true;
+                    onDragStart?.Invoke();
+                    break;
+                }
             }
         }
 
-        if (PlayerInputReader.Instance.ClickHeld && dragging)
+        if (PlayerInputReader.Instance.ClickHeld && dragging && currentDragging != null)
         {
-            transform.position = worldPos;
+            currentDragging.transform.position = pointerWorldPos;
         }
 
-        if (PlayerInputReader.Instance.ClickReleased && dragging)
+        if (PlayerInputReader.Instance.ClickReleased && dragging && currentDragging != null)
         {
             dragging = false;
-            onDragEnd?.Invoke();
+
+            float distance = Vector2.Distance(currentDragging.transform.position, dragTargetArea.position);
+            if (distance <= snapDistance)
+            {
+                Debug.Log("ドラッグ成功！");
+                onDragSuccess?.Invoke();
+            }
+            else
+            {
+                Debug.Log("ドラッグ失敗！");
+                onDragFail?.Invoke();
+            }
+
+            currentDragging = null;
         }
     }
 }

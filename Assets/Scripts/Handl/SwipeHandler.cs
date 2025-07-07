@@ -1,18 +1,34 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 public class SwipeHandler : MonoBehaviour
 {
     public enum SwipeDirection { Up, Down, Left, Right }
-    public SwipeDirection requiredDirection;
-    public float minSwipeDistance = 100f;
-    public UnityEvent onSwipeDetected;
 
+    [Tooltip("スワイプ対象オブジェクト（順不同）")]
+    public GameObject[] swipeTargets;
+
+    [Tooltip("要求されるスワイプ方向")]
+    public SwipeDirection requiredDirection = SwipeDirection.Up;
+
+    [Tooltip("スワイプとみなす最低距離（ピクセル）")]
+    public float minSwipeDistance = 100f;
+
+    [Tooltip("各スワイプ検出時に呼ばれるイベント")]
+    public UnityEvent onEachSwiped;
+
+    [Tooltip("全てスワイプ完了時に呼ばれるイベント")]
+    public UnityEvent onAllSwiped;
+
+    private HashSet<GameObject> swipedObjects = new HashSet<GameObject>();
     private Vector2 startPos;
     private bool tracking = false;
 
     void Update()
     {
+        if (swipeTargets.Length == 0) return;
+
         if (PlayerInputReader.Instance.ClickStarted)
         {
             startPos = PlayerInputReader.Instance.PointerPosition;
@@ -29,7 +45,30 @@ public class SwipeHandler : MonoBehaviour
             {
                 SwipeDirection dir = DetectDirection(swipe);
                 if (dir == requiredDirection)
-                    onSwipeDetected?.Invoke();
+                {
+                    Vector2 worldStart = Camera.main.ScreenToWorldPoint(startPos);
+                    Collider2D hit = Physics2D.OverlapPoint(worldStart);
+
+                    if (hit != null)
+                    {
+                        foreach (GameObject target in swipeTargets)
+                        {
+                            if (hit.gameObject == target && !swipedObjects.Contains(target))
+                            {
+                                swipedObjects.Add(target);
+                                Debug.Log($"Swiped: {target.name}");
+                                onEachSwiped?.Invoke();
+                                break;
+                            }
+                        }
+
+                        if (swipedObjects.Count == swipeTargets.Length)
+                        {
+                            Debug.Log("全てのスワイプ完了！");
+                            onAllSwiped?.Invoke();
+                        }
+                    }
+                }
             }
         }
     }
