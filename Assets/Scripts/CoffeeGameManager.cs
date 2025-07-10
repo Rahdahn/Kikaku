@@ -10,7 +10,7 @@ public class CoffeeGameManager : MonoBehaviour
     {
         public string stepName;
         public GameObject targetObject;
-        public UnityEvent onStepStart;   // ステップ開始時のイベント（例：UI表示）
+        public UnityEvent onStepStart;   // ステップ開始時のイベント
         public UnityEvent onStepComplete; // ステップ完了後に実行されるイベント
     }
 
@@ -35,7 +35,6 @@ public class CoffeeGameManager : MonoBehaviour
         Step current = steps[currentStepIndex];
         Debug.Log($"ステップ開始: {current.stepName}");
 
-        current.targetObject.SetActive(true); // 対象オブジェクトをアクティブに
         current.onStepStart?.Invoke();
     }
 
@@ -45,7 +44,6 @@ public class CoffeeGameManager : MonoBehaviour
         Debug.Log($"ステップ完了: {current.stepName}");
 
         current.onStepComplete?.Invoke();
-        current.targetObject.SetActive(false); // 完了したオブジェクトは非アクティブに
 
         AdvanceStep(); // 次のステップへ
     }

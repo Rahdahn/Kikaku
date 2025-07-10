@@ -8,7 +8,7 @@ public class CameraMove : MonoBehaviour
     public Camera mainCamera;
     public float moveDistance = 10f;
     public float moveDuration = 1f;
-    public List<Transform> moveWithCameraObjects; // 一緒に移動させるオブジェクト
+    public List<Transform> moveWithCameraObjects;
 
     public UnityEvent onMoveComplete;
 

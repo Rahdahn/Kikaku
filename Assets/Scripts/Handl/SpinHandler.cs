@@ -3,8 +3,11 @@ using UnityEngine.Events;
 
 public class SpinHandler : MonoBehaviour
 {
-    public Transform center;
+    public Transform center;               // 回転の中心（ワールド座標で指定）
+    public Transform rotateTarget;         // 見た目として回転させたいオブジェクト
+    public Transform handleColliderTarget; // プレイヤーが触るコライダーのある部分（取っ手など）
     public float requiredTotalAngle = 360f;
+
     public UnityEvent onSpinComplete;
 
     private float totalRotation = 0f;
@@ -17,9 +20,13 @@ public class SpinHandler : MonoBehaviour
 
         if (PlayerInputReader.Instance.ClickStarted)
         {
-            spinning = true;
-            prevPos = current;
-            totalRotation = 0f;
+            Collider2D hit = Physics2D.OverlapPoint(current);
+            if (hit != null && hit.transform == handleColliderTarget)
+            {
+                spinning = true;
+                prevPos = current;
+                totalRotation = 0f;
+            }
         }
 
         if (PlayerInputReader.Instance.ClickHeld && spinning)
@@ -27,6 +34,8 @@ public class SpinHandler : MonoBehaviour
             float angle = Vector2.SignedAngle(prevPos - (Vector2)center.position, current - (Vector2)center.position);
             totalRotation += Mathf.Abs(angle);
             prevPos = current;
+
+            rotateTarget.Rotate(Vector3.forward, angle);
 
             if (totalRotation >= requiredTotalAngle)
             {
